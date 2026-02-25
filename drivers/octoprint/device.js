@@ -5,12 +5,24 @@ const { OctoprintAPI } = require('../../lib/octoprint.js');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 class OctoprintDevice extends Homey.Device {
+	static CAMERA_ID = 'front';
+	static STREAM_MODES = {
+		webrtc_native: '/webcam/webrtc',
+		video_auto: '/webcam/video',
+		hls: '/webcam/video.m3u8',
+		mp4: '/webcam/video.mp4',
+		mkv: '/webcam/video.mkv',
+		mjpeg: '/webcam/?action=stream',
+		custom: null,
+	};
+
 	/**
 	 * onInit is called when the device is initialized.
 	 */
 	async onInit() {
 		// Migrate to all new capabilities
 		this.log('OctoprintDriver initialization started');
+		await this.ensureCameraSettings();
 		
 		if (this.getSetting('heated_bed') === false) {
 			if (this.hasCapability('target_temperature.bed')) {
@@ -122,6 +134,8 @@ class OctoprintDevice extends Homey.Device {
 			server: null,
 			state: null,
 			snapshot: this.getSetting('snapshot_active'),
+			stream: this.isStreamActive(),
+			stream_config: this.getStreamConfigSignature(),
 			temp: {
 				bed: {
 					actual: '-',
@@ -161,6 +175,7 @@ class OctoprintDevice extends Homey.Device {
 		}
 
 		await this.setSnapshotImage().catch(this.error);
+		await this.setStreamVideo().catch(this.error);
 
 		// Register capabilities
 		this.registerCapabilityListener('onoff', async (value) => {
@@ -542,6 +557,23 @@ class OctoprintDevice extends Homey.Device {
 				}
 			}
 
+			if (changedKeys.includes('snapshot_active') || changedKeys.includes('snapshot_url')) {
+				await this.setSnapshotImage().catch(this.error);
+				this.printer.snapshot = this.getSetting('snapshot_active');
+			}
+
+			if (
+				changedKeys.includes('stream_active')
+				|| changedKeys.includes('stream_url')
+				|| changedKeys.includes('stream_mode')
+				|| changedKeys.includes('disable_webrtc_proxy')
+				|| changedKeys.includes('webrtc_data_channel')
+			) {
+				await this.setStreamVideo().catch(this.error);
+				this.printer.stream = this.isStreamActive();
+				this.printer.stream_config = this.getStreamConfigSignature();
+			}
+
 			this.log('OctoPrint settings changed:\n', changedKeys);
 		}
 		else {
@@ -556,6 +588,10 @@ class OctoprintDevice extends Homey.Device {
 	async onDeleted() {
 		this.log('OctoPrint device removed');
 		this.polling = false;
+
+		if (this.streamVideo && typeof this.streamVideo.unregister === 'function') {
+			await this.streamVideo.unregister().catch(this.error);
+		}
 	}
 
 	async pollDevice() {
@@ -576,6 +612,19 @@ class OctoprintDevice extends Homey.Device {
 				if (this.printer.snapshot !== snaptshotActive) {
 					await this.setSnapshotImage();
 					this.printer.snapshot = snaptshotActive;
+				}
+
+				const streamActive = this.isStreamActive();
+				if (this.printer.stream !== streamActive) {
+					await this.setStreamVideo();
+					this.printer.stream = streamActive;
+					this.printer.stream_config = this.getStreamConfigSignature();
+				}
+
+				const streamConfig = this.getStreamConfigSignature();
+				if (this.printer.stream_config !== streamConfig) {
+					await this.setStreamVideo();
+					this.printer.stream_config = streamConfig;
 				}
 
 				// Set printer temps and job
@@ -768,16 +817,11 @@ class OctoprintDevice extends Homey.Device {
 	}
 
 	async setSnapshotImage() {
-		let snapshotUrl = this.getSetting('snapshot_url');
-
-		if (
-			this.getSetting('snapshot_active')
-			&& typeof snapshotUrl === 'string'
-		) {
+		if (this.getSetting('snapshot_active')) {
 			this.snapshotImage = await this.homey.images.createImage();
 
 			this.snapshotImage.setStream(async (stream) => {
-				const res = await this.octoprint.getSnapshot(snapshotUrl);
+				const res = await this.octoprint.getSnapshot(this.sanitizeUrlInput(this.getSetting('snapshot_url')));
 
 				if (!res.ok) {
 					throw new Error(this.homey.__('error.snapshot_failed'));
@@ -786,7 +830,266 @@ class OctoprintDevice extends Homey.Device {
 				return res.body.pipe(stream);
 			});
 
-			await this.setCameraImage('front', this.homey.__('snapshot.title'), this.snapshotImage).catch(this.error);
+			await this.setCameraImage(OctoprintDevice.CAMERA_ID, this.homey.__('snapshot.title'), this.snapshotImage).catch(this.error);
+		}
+	}
+
+	isStreamActive() {
+		const streamActive = this.getSetting('stream_active');
+		return typeof streamActive === 'boolean' ? streamActive : true;
+	}
+
+	getStreamMode() {
+		const streamMode = this.getSetting('stream_mode');
+
+		if (typeof streamMode === 'string' && Object.prototype.hasOwnProperty.call(OctoprintDevice.STREAM_MODES, streamMode)) {
+			return streamMode;
+		}
+
+		return this.inferStreamMode(this.getSetting('stream_url'));
+	}
+
+	inferStreamMode(streamUrl) {
+		const urlValue = this.sanitizeUrlInput(streamUrl);
+		if (urlValue === '') {
+			return 'video_auto';
+		}
+
+		const url = urlValue.toLowerCase();
+
+		if (url.includes('/webcam/webrtc')) return 'webrtc_native';
+		if (url.includes('/webcam/video.m3u8')) return 'hls';
+		if (url.includes('/webcam/video.mp4')) return 'mp4';
+		if (url.includes('/webcam/video.mkv')) return 'mkv';
+		if (url.includes('/webcam/video')) return 'video_auto';
+		if (url.includes('/webcam/?action=stream') || url.includes('/webcam/stream')) return 'mjpeg';
+
+		return 'custom';
+	}
+
+	getSelectedStreamUrl() {
+		const streamMode = this.getStreamMode();
+
+		if (streamMode === 'custom') {
+			return this.sanitizeUrlInput(this.getSetting('stream_url'));
+		}
+
+		return OctoprintDevice.STREAM_MODES[streamMode] || OctoprintDevice.STREAM_MODES.video_auto;
+	}
+
+	isWebRtcProxyDisabled() {
+		const disableProxy = this.getSetting('disable_webrtc_proxy');
+		return typeof disableProxy === 'boolean' ? disableProxy : false;
+	}
+
+	getStreamConfigSignature() {
+		const streamMode = this.getStreamMode();
+		return [
+			this.isStreamActive() ? '1' : '0',
+			streamMode,
+			this.getSelectedStreamUrl(),
+			this.isWebRtcProxyDisabled() ? '1' : '0',
+			this.getEffectiveWebRtcDataChannel(streamMode) ? '1' : '0',
+		].join('|');
+	}
+
+	isWebRtcDataChannelEnabled() {
+		const dataChannel = this.getSetting('webrtc_data_channel');
+		return typeof dataChannel === 'boolean' ? dataChannel : false;
+	}
+
+	getEffectiveWebRtcDataChannel(streamMode = this.getStreamMode()) {
+		return (streamMode === 'webrtc_native') ? false : this.isWebRtcDataChannelEnabled();
+	}
+
+	getCameraStreamerStatusSummary(status) {
+		if (!status || !status.endpoints) {
+			return null;
+		}
+
+		const summary = {};
+		for (const key of ['snapshot', 'stream', 'video', 'webrtc']) {
+			const endpoint = status.endpoints[key];
+			if (!endpoint) {
+				continue;
+			}
+
+			summary[key] = {
+				enabled: endpoint.enabled === true,
+				uri: typeof endpoint.uri === 'string' ? endpoint.uri : null,
+			};
+		}
+
+		return summary;
+	}
+
+	async getCameraStreamerStatusSafe() {
+		try {
+			return await this.octoprint.getCameraStreamerStatus();
+		}
+		catch (error) {
+			this.log('camera-streamer status unavailable', {
+				error: error && error.message ? error.message : String(error),
+			});
+			return null;
+		}
+	}
+
+	getVideoFactoryForStream(streamMode, streamUrl) {
+		if (streamMode === 'webrtc_native') {
+			return 'createVideoWebRTC';
+		}
+
+		if (streamMode === 'hls') {
+			return 'createVideoHLS';
+		}
+
+		if (streamMode === 'custom') {
+			const url = this.octoprint.getStreamUrl(streamUrl).toLowerCase();
+
+			if (url.includes('/webrtc')) return 'createVideoWebRTC';
+			if (url.startsWith('rtmp://')) return 'createVideoRTMP';
+			if (url.includes('.m3u8')) return 'createVideoHLS';
+			if (url.includes('.mpd')) return 'createVideoDASH';
+		}
+
+		return 'createVideoOther';
+	}
+
+	sanitizeUrlInput(urlValue) {
+		if (typeof urlValue !== 'string') {
+			return '';
+		}
+
+		return urlValue.replace(/[\r\n\t]/g, '').trim();
+	}
+
+	async setStreamVideo() {
+		if (this.streamVideo && typeof this.streamVideo.unregister === 'function') {
+			await this.streamVideo.unregister().catch(this.error);
+			this.streamVideo = null;
+		}
+
+		if (!this.isStreamActive()) {
+			return;
+		}
+
+		if (!this.homey.videos || typeof this.homey.videos.createVideoOther !== 'function') {
+			this.log('Video streaming is not supported on this Homey version.');
+			return;
+		}
+
+		const streamMode = this.getStreamMode();
+		let effectiveStreamMode = streamMode;
+		let selectedStreamUrl = this.getSelectedStreamUrl();
+		const cameraStreamerStatus = await this.getCameraStreamerStatusSafe();
+
+		const videoFactory = this.getVideoFactoryForStream(effectiveStreamMode, selectedStreamUrl);
+		const effectiveWebRtcDataChannel = this.getEffectiveWebRtcDataChannel(effectiveStreamMode);
+		const createVideoFn = (typeof this.homey.videos[videoFactory] === 'function')
+			? this.homey.videos[videoFactory].bind(this.homey.videos)
+			: this.homey.videos.createVideoOther.bind(this.homey.videos);
+		const streamUrlResolved = this.octoprint.getStreamUrl(selectedStreamUrl);
+		this.log('Configuring stream video', {
+			streamMode,
+			effectiveStreamMode,
+			videoFactory,
+			disableWebRTCProxy: this.isWebRtcProxyDisabled(),
+			webrtcDataChannel: effectiveWebRtcDataChannel,
+			streamUrl: streamUrlResolved,
+			cameraStreamerEndpoints: this.getCameraStreamerStatusSummary(cameraStreamerStatus),
+		});
+
+		if (videoFactory === 'createVideoWebRTC') {
+			this.streamVideo = await this.homey.videos.createVideoWebRTC({
+				dataChannel: effectiveWebRtcDataChannel,
+			});
+		}
+		else {
+			this.streamVideo = await createVideoFn({
+				disableWebRTCProxy: this.isWebRtcProxyDisabled(),
+			});
+		}
+
+		if (videoFactory === 'createVideoWebRTC') {
+			this.streamVideo.registerOfferListener(async (offerSdp) => {
+				this.log('WebRTC offer received from Homey frontend', {
+					streamMode: effectiveStreamMode,
+					offerLength: typeof offerSdp === 'string' ? offerSdp.length : 0,
+				});
+				const result = await this.octoprint.getWebRtcAnswer(selectedStreamUrl, offerSdp);
+				this.log('WebRTC answer received from camera-streamer', {
+					streamMode: effectiveStreamMode,
+					answerLength: typeof result.answerSdp === 'string' ? result.answerSdp.length : 0,
+					streamId: result.streamId || null,
+				});
+				return result;
+			});
+		}
+		else {
+			this.streamVideo.registerVideoUrlListener(async () => {
+				const resolvedUrl = this.octoprint.getStreamUrl(selectedStreamUrl);
+				this.log('Video URL requested by Homey frontend', {
+					streamMode: effectiveStreamMode,
+					videoFactory,
+					disableWebRTCProxy: this.isWebRtcProxyDisabled(),
+					resolvedUrl,
+				});
+				return {
+					url: resolvedUrl,
+				};
+			});
+		}
+
+		const streamTitle = this.homey.__('stream.title');
+		await this.setCameraVideo(
+			OctoprintDevice.CAMERA_ID,
+			(typeof streamTitle === 'string' && streamTitle !== 'stream.title') ? streamTitle : 'Stream',
+			this.streamVideo
+		).catch(this.error);
+	}
+
+	async ensureCameraSettings() {
+		const updates = {};
+		const currentSnapshotUrl = this.sanitizeUrlInput(this.getSetting('snapshot_url'));
+		const currentStreamUrl = this.sanitizeUrlInput(this.getSetting('stream_url'));
+
+		if (currentSnapshotUrl === '') {
+			updates.snapshot_url = '/webcam/?action=snapshot';
+		}
+		else if (currentSnapshotUrl !== this.getSetting('snapshot_url')) {
+			updates.snapshot_url = currentSnapshotUrl;
+		}
+
+		if (currentStreamUrl === '') {
+			updates.stream_url = '/webcam/?action=stream';
+		}
+		else if (currentStreamUrl !== this.getSetting('stream_url')) {
+			updates.stream_url = currentStreamUrl;
+		}
+
+		const currentStreamMode = this.getSetting('stream_mode');
+		if (currentStreamMode === 'rtsp_camera_streamer') {
+			updates.stream_mode = 'video_auto';
+		}
+		else if (typeof currentStreamMode !== 'string' || !Object.prototype.hasOwnProperty.call(OctoprintDevice.STREAM_MODES, currentStreamMode)) {
+			updates.stream_mode = this.inferStreamMode(currentStreamUrl);
+		}
+
+		if (typeof this.getSetting('disable_webrtc_proxy') !== 'boolean') {
+			updates.disable_webrtc_proxy = false;
+		}
+
+		if (typeof this.getSetting('webrtc_data_channel') !== 'boolean') {
+			updates.webrtc_data_channel = false;
+		}
+
+		if (typeof this.getSetting('stream_active') !== 'boolean') {
+			updates.stream_active = true;
+		}
+
+		if (Object.keys(updates).length > 0) {
+			await this.setSettings(updates).catch(this.error);
 		}
 	}
 

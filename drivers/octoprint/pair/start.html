@@ -28,7 +28,12 @@ $(function () {
 						settings: {
 							address: connection.address,
 							apikey: connection.apikey,
-							snapshot_url: connection.address+'/webcam/?action=snapshot'
+							snapshot_url: '/webcam/?action=snapshot',
+							stream_active: true,
+							stream_mode: 'video_auto',
+							disable_webrtc_proxy: false,
+							webrtc_data_channel: false,
+							stream_url: '/webcam/?action=stream'
 						}
 					};
 

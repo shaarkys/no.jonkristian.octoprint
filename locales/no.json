@@ -3,6 +3,9 @@
 	  "title": "Øyeblikksbilde",
 	  "reboot": "Innstillinger for øyeblikksbilde endret, vennligst start appen på nytt!"
 	},
+	"stream": {
+	  "title": "Stream"
+	},
 	"states": {
 	  "Offline": "Frakoblet",
 	  "Connecting": "Kobler til",

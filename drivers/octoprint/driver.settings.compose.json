@@ -139,7 +139,7 @@
           "pl": "URL migawki",
           "ko": "스냅샷 URL"
         },
-        "value": "",
+        "value": "/webcam/?action=snapshot",
         "hint": {
           "en": "Provide a URL to a camera still image to be used in flows.",
           "no": "Gi en URL til et kamera stillbilde som skal brukes i flows.",
@@ -153,6 +153,278 @@
           "ru": "Предоставьте URL к статичному изображению камеры для использования в потоках.",
           "pl": "Podaj URL do statycznego obrazu z kamery, który ma być używany w przepływach.",
           "ko": "흐름에서 사용할 카메라 정지 이미지의 URL을 제공하십시오."
+        }
+      },
+      {
+        "id": "stream_active",
+        "type": "checkbox",
+        "label": {
+          "en": "Use Stream",
+          "no": "Bruk stream",
+          "nl": "Gebruik stream",
+          "de": "Stream verwenden",
+          "fr": "Utiliser le flux",
+          "it": "Usa stream",
+          "sv": "Använd stream",
+          "es": "Usar transmisión",
+          "da": "Brug stream",
+          "ru": "Использовать поток",
+          "pl": "Użyj strumienia",
+          "ko": "스트림 사용"
+        },
+        "value": true
+      },
+      {
+        "id": "stream_mode",
+        "type": "dropdown",
+        "label": {
+          "en": "Stream format",
+          "no": "Strømformat",
+          "nl": "Stream-indeling",
+          "de": "Stream-Format",
+          "fr": "Format du flux",
+          "it": "Formato stream",
+          "sv": "Streamformat",
+          "es": "Formato de transmisión",
+          "da": "Streamformat",
+          "ru": "Формат потока",
+          "pl": "Format strumienia",
+          "ko": "스트림 형식"
+        },
+        "value": "video_auto",
+        "hint": {
+          "en": "Choose the stream endpoint. For OctoPrint camera-streamer use WebRTC preset. MJPEG usually works on mobile only. Use Custom URL for a manual endpoint.",
+          "no": "Velg strømens endepunkt. For camera-streamer bruk WebRTC-forvalg. MJPEG fungerer vanligvis bare på mobil. Bruk tilpasset URL for manuelt endepunkt.",
+          "nl": "Kies het stream-eindpunt. Gebruik voor camera-streamer WebRTC-voorinstelling. MJPEG werkt meestal alleen op mobiel. Gebruik Aangepaste URL voor een handmatig eindpunt.",
+          "de": "Wählen Sie den Stream-Endpunkt. Für camera-streamer verwenden Sie die WebRTC-Voreinstellung. MJPEG funktioniert meist nur mobil. Verwenden Sie Benutzerdefinierte URL für einen manuellen Endpunkt.",
+          "fr": "Choisissez le point de terminaison du flux. Pour camera-streamer utilisez le préréglage WebRTC. MJPEG fonctionne généralement uniquement sur mobile. Utilisez URL personnalisée pour un point de terminaison manuel.",
+          "it": "Scegli l'endpoint del flusso. Per camera-streamer usa il preset WebRTC. MJPEG di solito funziona solo su mobile. Usa URL personalizzato per un endpoint manuale.",
+          "sv": "Välj stream-endpoint. För camera-streamer använd WebRTC-förval. MJPEG fungerar vanligtvis bara på mobil. Använd anpassad URL för manuellt endpoint.",
+          "es": "Elija el endpoint de transmisión. Para camera-streamer use el preajuste WebRTC. MJPEG suele funcionar solo en móvil. Use URL personalizada para un endpoint manual.",
+          "da": "Vælg stream-endpoint. For camera-streamer brug WebRTC-forvalg. MJPEG virker normalt kun på mobil. Brug Tilpasset URL til manuelt endpoint.",
+          "ru": "Выберите конечную точку потока. Для camera-streamer используйте предустановку WebRTC. MJPEG обычно работает только на мобильном. Используйте Пользовательский URL для ручной настройки.",
+          "pl": "Wybierz punkt końcowy strumienia. Dla camera-streamer użyj presetu WebRTC. MJPEG zwykle działa tylko na mobile. Użyj niestandardowego URL dla ręcznego endpointu.",
+          "ko": "스트림 엔드포인트를 선택하세요. camera-streamer에는 WebRTC 프리셋을 사용하세요. MJPEG는 일반적으로 모바일에서만 작동합니다. 수동 엔드포인트는 사용자 지정 URL을 사용하세요."
+        },
+        "values": [
+          {
+            "id": "webrtc_native",
+            "label": {
+              "en": "WebRTC (/webcam/webrtc)",
+              "no": "WebRTC (/webcam/webrtc)",
+              "nl": "WebRTC (/webcam/webrtc)",
+              "de": "WebRTC (/webcam/webrtc)",
+              "fr": "WebRTC (/webcam/webrtc)",
+              "it": "WebRTC (/webcam/webrtc)",
+              "sv": "WebRTC (/webcam/webrtc)",
+              "es": "WebRTC (/webcam/webrtc)",
+              "da": "WebRTC (/webcam/webrtc)",
+              "ru": "WebRTC (/webcam/webrtc)",
+              "pl": "WebRTC (/webcam/webrtc)",
+              "ko": "WebRTC (/webcam/webrtc)"
+            }
+          },
+          {
+            "id": "video_auto",
+            "label": {
+              "en": "Video Auto (/webcam/video)",
+              "no": "Video Auto (/webcam/video)",
+              "nl": "Video Auto (/webcam/video)",
+              "de": "Video Auto (/webcam/video)",
+              "fr": "Video Auto (/webcam/video)",
+              "it": "Video Auto (/webcam/video)",
+              "sv": "Video Auto (/webcam/video)",
+              "es": "Video Auto (/webcam/video)",
+              "da": "Video Auto (/webcam/video)",
+              "ru": "Video Auto (/webcam/video)",
+              "pl": "Video Auto (/webcam/video)",
+              "ko": "Video Auto (/webcam/video)"
+            }
+          },
+          {
+            "id": "hls",
+            "label": {
+              "en": "HLS (/webcam/video.m3u8)",
+              "no": "HLS (/webcam/video.m3u8)",
+              "nl": "HLS (/webcam/video.m3u8)",
+              "de": "HLS (/webcam/video.m3u8)",
+              "fr": "HLS (/webcam/video.m3u8)",
+              "it": "HLS (/webcam/video.m3u8)",
+              "sv": "HLS (/webcam/video.m3u8)",
+              "es": "HLS (/webcam/video.m3u8)",
+              "da": "HLS (/webcam/video.m3u8)",
+              "ru": "HLS (/webcam/video.m3u8)",
+              "pl": "HLS (/webcam/video.m3u8)",
+              "ko": "HLS (/webcam/video.m3u8)"
+            }
+          },
+          {
+            "id": "mp4",
+            "label": {
+              "en": "MP4 (/webcam/video.mp4)",
+              "no": "MP4 (/webcam/video.mp4)",
+              "nl": "MP4 (/webcam/video.mp4)",
+              "de": "MP4 (/webcam/video.mp4)",
+              "fr": "MP4 (/webcam/video.mp4)",
+              "it": "MP4 (/webcam/video.mp4)",
+              "sv": "MP4 (/webcam/video.mp4)",
+              "es": "MP4 (/webcam/video.mp4)",
+              "da": "MP4 (/webcam/video.mp4)",
+              "ru": "MP4 (/webcam/video.mp4)",
+              "pl": "MP4 (/webcam/video.mp4)",
+              "ko": "MP4 (/webcam/video.mp4)"
+            }
+          },
+          {
+            "id": "mkv",
+            "label": {
+              "en": "MKV (/webcam/video.mkv)",
+              "no": "MKV (/webcam/video.mkv)",
+              "nl": "MKV (/webcam/video.mkv)",
+              "de": "MKV (/webcam/video.mkv)",
+              "fr": "MKV (/webcam/video.mkv)",
+              "it": "MKV (/webcam/video.mkv)",
+              "sv": "MKV (/webcam/video.mkv)",
+              "es": "MKV (/webcam/video.mkv)",
+              "da": "MKV (/webcam/video.mkv)",
+              "ru": "MKV (/webcam/video.mkv)",
+              "pl": "MKV (/webcam/video.mkv)",
+              "ko": "MKV (/webcam/video.mkv)"
+            }
+          },
+          {
+            "id": "mjpeg",
+            "label": {
+              "en": "MJPEG (/webcam/?action=stream)",
+              "no": "MJPEG (/webcam/?action=stream)",
+              "nl": "MJPEG (/webcam/?action=stream)",
+              "de": "MJPEG (/webcam/?action=stream)",
+              "fr": "MJPEG (/webcam/?action=stream)",
+              "it": "MJPEG (/webcam/?action=stream)",
+              "sv": "MJPEG (/webcam/?action=stream)",
+              "es": "MJPEG (/webcam/?action=stream)",
+              "da": "MJPEG (/webcam/?action=stream)",
+              "ru": "MJPEG (/webcam/?action=stream)",
+              "pl": "MJPEG (/webcam/?action=stream)",
+              "ko": "MJPEG (/webcam/?action=stream)"
+            }
+          },
+          {
+            "id": "custom",
+            "label": {
+              "en": "Custom URL",
+              "no": "Tilpasset URL",
+              "nl": "Aangepaste URL",
+              "de": "Benutzerdefinierte URL",
+              "fr": "URL personnalisée",
+              "it": "URL personalizzato",
+              "sv": "Anpassad URL",
+              "es": "URL personalizada",
+              "da": "Tilpasset URL",
+              "ru": "Пользовательский URL",
+              "pl": "Niestandardowy URL",
+              "ko": "사용자 지정 URL"
+            }
+          }
+        ]
+      },
+      {
+        "id": "disable_webrtc_proxy",
+        "type": "checkbox",
+        "label": {
+          "en": "Disable Homey WebRTC proxy",
+          "no": "Deaktiver Homey WebRTC-proxy",
+          "nl": "Schakel Homey WebRTC-proxy uit",
+          "de": "Homey WebRTC-Proxy deaktivieren",
+          "fr": "Désactiver le proxy WebRTC Homey",
+          "it": "Disattiva proxy WebRTC Homey",
+          "sv": "Inaktivera Homey WebRTC-proxy",
+          "es": "Desactivar proxy WebRTC de Homey",
+          "da": "Deaktiver Homey WebRTC-proxy",
+          "ru": "Отключить WebRTC-прокси Homey",
+          "pl": "Wyłącz proxy WebRTC Homey",
+          "ko": "Homey WebRTC 프록시 비활성화"
+        },
+        "value": false,
+        "hint": {
+          "en": "When enabled, Homey will use the original stream URL directly instead of converting through its WebRTC proxy.",
+          "no": "Når aktivert, bruker Homey den opprinnelige strøm-URL-en direkte i stedet for å konvertere gjennom sin WebRTC-proxy.",
+          "nl": "Wanneer ingeschakeld gebruikt Homey de oorspronkelijke stream-URL direct in plaats van conversie via de WebRTC-proxy.",
+          "de": "Wenn aktiviert, verwendet Homey die ursprüngliche Stream-URL direkt statt einer Konvertierung über den WebRTC-Proxy.",
+          "fr": "Lorsqu'activé, Homey utilise directement l'URL de flux d'origine au lieu d'une conversion via son proxy WebRTC.",
+          "it": "Quando abilitato, Homey usa direttamente l'URL del flusso originale invece della conversione tramite proxy WebRTC.",
+          "sv": "När aktiverat använder Homey den ursprungliga stream-URL:en direkt istället för konvertering via sin WebRTC-proxy.",
+          "es": "Cuando está activado, Homey usa la URL de transmisión original directamente en lugar de convertirla mediante su proxy WebRTC.",
+          "da": "Når aktiveret bruger Homey den oprindelige stream-URL direkte i stedet for konvertering via sin WebRTC-proxy.",
+          "ru": "При включении Homey использует исходный URL потока напрямую вместо преобразования через свой WebRTC-прокси.",
+          "pl": "Po włączeniu Homey używa bezpośrednio oryginalnego URL strumienia zamiast konwersji przez swój proxy WebRTC.",
+          "ko": "활성화하면 Homey는 WebRTC 프록시 변환 대신 원본 스트림 URL을 직접 사용합니다."
+        }
+      },
+      {
+        "id": "webrtc_data_channel",
+        "type": "checkbox",
+        "label": {
+          "en": "WebRTC data channel",
+          "no": "WebRTC datakanal",
+          "nl": "WebRTC-datakanaal",
+          "de": "WebRTC-Datenkanal",
+          "fr": "Canal de données WebRTC",
+          "it": "Canale dati WebRTC",
+          "sv": "WebRTC datakanal",
+          "es": "Canal de datos WebRTC",
+          "da": "WebRTC datakanal",
+          "ru": "Канал данных WebRTC",
+          "pl": "Kanał danych WebRTC",
+          "ko": "WebRTC 데이터 채널"
+        },
+        "value": false,
+        "hint": {
+          "en": "Enable only if your camera backend requires a WebRTC data channel.",
+          "no": "Aktiver kun hvis kamerabackenden krever en WebRTC-datakanal.",
+          "nl": "Alleen inschakelen als je camera-backend een WebRTC-datakanaal vereist.",
+          "de": "Nur aktivieren, wenn Ihr Kamera-Backend einen WebRTC-Datenkanal benötigt.",
+          "fr": "Activer uniquement si votre backend caméra nécessite un canal de données WebRTC.",
+          "it": "Abilita solo se il backend della camera richiede un canale dati WebRTC.",
+          "sv": "Aktivera endast om din kamerabackend kräver en WebRTC-datakanal.",
+          "es": "Activar solo si el backend de su cámara requiere un canal de datos WebRTC.",
+          "da": "Aktiver kun hvis dit kamera-backend kræver en WebRTC-datakanal.",
+          "ru": "Включайте только если ваш backend камеры требует канал данных WebRTC.",
+          "pl": "Włącz tylko jeśli backend kamery wymaga kanału danych WebRTC.",
+          "ko": "카메라 백엔드에서 WebRTC 데이터 채널이 필요한 경우에만 활성화하세요."
+        }
+      },
+      {
+        "id": "stream_url",
+        "type": "text",
+        "label": {
+          "en": "Stream URL",
+          "no": "Lenke til stream",
+          "nl": "Stream URL",
+          "de": "Stream-URL",
+          "fr": "URL du flux",
+          "it": "URL stream",
+          "sv": "Stream-URL",
+          "es": "URL de transmisión",
+          "da": "Stream URL",
+          "ru": "URL потока",
+          "pl": "URL strumienia",
+          "ko": "스트림 URL"
+        },
+        "value": "/webcam/?action=stream",
+        "hint": {
+          "en": "Used when Stream format is set to Custom URL.",
+          "no": "Brukes når strømformat er satt til Tilpasset URL.",
+          "nl": "Wordt gebruikt wanneer Stream-indeling is ingesteld op Aangepaste URL.",
+          "de": "Wird verwendet, wenn Stream-Format auf Benutzerdefinierte URL gesetzt ist.",
+          "fr": "Utilisé lorsque le format du flux est défini sur URL personnalisée.",
+          "it": "Usato quando il formato stream è impostato su URL personalizzato.",
+          "sv": "Används när Streamformat är inställt på Anpassad URL.",
+          "es": "Se usa cuando el formato de transmisión está en URL personalizada.",
+          "da": "Bruges når streamformat er sat til Tilpasset URL.",
+          "ru": "Используется, когда формат потока установлен на Пользовательский URL.",
+          "pl": "Używane, gdy Format strumienia ustawiony jest na Niestandardowy URL.",
+          "ko": "스트림 형식이 사용자 지정 URL일 때 사용됩니다."
         }
       },
       {

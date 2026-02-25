@@ -3,6 +3,9 @@
 	  "title": "Snapshot",
 	  "reboot": "Snapshot settings changed, please restart the app!"
 	},
+	"stream": {
+	  "title": "Stream"
+	},
 	"states": {
 	  "Offline": "Offline",
 	  "Connecting": "Connecting",
