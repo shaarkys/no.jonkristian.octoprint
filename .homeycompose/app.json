@@ -1,6 +1,6 @@
 {
   "id": "no.jonkristian.octoprint",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "compatibility": ">=12.1.0",
   "sdk": 3,
   "brandColor": "#12BB00",
